@@ -1,0 +1,78 @@
+{% extends 'ads/base.html' %}
+
+{% block title %}{{ ad.title }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            {% if ad.image_url %}
+                <img src="{{ ad.image_url }}" class="card-img-top" style="max-height: 400px; object-fit: cover;">
+            {% endif %}
+            <div class="card-body">
+                <h1 class="card-title">{{ ad.title }}</h1>
+                <p class="card-text">{{ ad.description|linebreaks }}</p>
+                
+                <div class="mb-3">
+                    <span class="badge bg-primary me-2">{{ ad.get_category_display }}</span>
+                    <span class="badge bg-secondary me-2">{{ ad.get_condition_display }}</span>
+                </div>
+                
+                <div class="text-muted">
+                    <small>Автор: {{ ad.user.username }}</small><br>
+                    <small>Опубликовано: {{ ad.created_at|date:"d.m.Y H:i" }}</small>
+                    {% if ad.updated_at != ad.created_at %}
+                        <br><small>Обновлено: {{ ad.updated_at|date:"d.m.Y H:i" }}</small>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if user == ad.user %}
+                <div class="card-footer">
+                    <a href="{% url 'ad_edit' ad.pk %}" class="btn btn-warning">Редактировать</a>
+                    <a href="{% url 'ad_delete' ad.pk %}" class="btn btn-danger">Удалить</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        {% if user.is_authenticated and user != ad.user and user_ads %}
+            <div class="card">
+                <div class="card-header">
+                    <h5>Предложить обмен</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'create_proposal' ad.pk %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="sender_ad_id" class="form-label">Выберите ваш товар:</label>
+                            <select name="sender_ad_id" id="sender_ad_id" class="form-control" required>
+                                <option value="">-- Выберите товар --</option>
+                                {% for user_ad in user_ads %}
+                                    <option value="{{ user_ad.pk }}">{{ user_ad.title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="comment" class="form-label">Комментарий:</label>
+                            <textarea name="comment" id="comment" class="form-control" rows="3" placeholder="Добавьте комментарий к предложению"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-success">Предложить обмен</button>
+                    </form>
+                </div>
+            </div>
+        {% elif user.is_authenticated and user != ad.user and not user_ads %}
+            <div class="alert alert-info">
+                <p>Чтобы предложить обмен, сначала создайте свое объявление.</p>
+                <a href="{% url 'ad_create' %}" class="btn btn-primary">Создать объявление</a>
+            </div>
+        {% elif not user.is_authenticated %}
+            <div class="alert alert-info">
+                <p>Войдите в систему, чтобы предложить обмен.</p>
+                <a href="/admin/login/" class="btn btn-primary">Войти</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
